@@ -1,0 +1,13 @@
+{
+  "name": "Workshop.Complete.Editor",
+  "rootNamespace": "Workshop.Complete.EditorTools",
+  "references": [
+    "Unity.Pipeline",
+    "Workshop.Complete",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

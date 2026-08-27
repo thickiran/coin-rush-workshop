@@ -1,0 +1,11 @@
+{
+  "name": "Workshop.Setup.Editor",
+  "rootNamespace": "Workshop.Setup",
+  "references": [
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

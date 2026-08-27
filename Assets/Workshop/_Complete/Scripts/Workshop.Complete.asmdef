@@ -1,0 +1,8 @@
+{
+  "name": "Workshop.Complete",
+  "rootNamespace": "Workshop.Complete",
+  "references": [
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}

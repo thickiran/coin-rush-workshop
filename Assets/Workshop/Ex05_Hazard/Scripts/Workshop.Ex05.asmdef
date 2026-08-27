@@ -1,0 +1,8 @@
+{
+  "name": "Workshop.Ex05",
+  "rootNamespace": "Workshop.Ex05",
+  "references": [
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}
