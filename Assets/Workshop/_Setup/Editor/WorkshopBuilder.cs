@@ -73,6 +73,14 @@ namespace Workshop.Setup
             MakeMat("Coin",   new Color(1f, 0.78f, 0.12f), emissive: true);
             MakeMat("Hazard", new Color(0.85f, 0.2f, 0.2f));
             MakeMat("Magnet", new Color(0.62f, 0.3f, 0.85f), emissive: true);
+
+            string artPath = MatDir + "/ArtVertexColor.mat";
+            if (AssetDatabase.LoadAssetAtPath<Material>(artPath) == null)
+            {
+                var shader = Shader.Find("Workshop/VertexColorLit");
+                if (shader != null)
+                    AssetDatabase.CreateAsset(new Material(shader), artPath);
+            }
         }
 
         static Material MakeMat(string name, Color c, bool emissive = false)
@@ -97,6 +105,37 @@ namespace Workshop.Setup
 
         static Material Mat(string name) => AssetDatabase.LoadAssetAtPath<Material>(MatDir + "/" + name + ".mat");
 
+        /// <summary>Polyfork model from _Shared/Art (.glb via glTFast, .fbx fallback), or null → primitives.</summary>
+        static GameObject Art(string fileName)
+        {
+            var glb = AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/_Shared/Art/" + fileName + ".glb");
+            if (glb != null) return glb;
+            return AssetDatabase.LoadAssetAtPath<GameObject>(Root + "/_Shared/Art/" + fileName + ".fbx");
+        }
+
+        static GameObject Model(GameObject asset, Transform parent, Vector3 localPos, float scale)
+        {
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            inst.transform.SetParent(parent, false);
+            inst.transform.localPosition = localPos;
+            inst.transform.localScale = Vector3.one * scale;
+            foreach (var c in inst.GetComponentsInChildren<Collider>())
+                UnityEngine.Object.DestroyImmediate(c);
+            // Polyfork palettes live in vertex colors; the glTF import shader
+            // ignores them, so all art renders through our vertex-color shader.
+            var artMat = Mat("ArtVertexColor");
+            if (artMat != null)
+            {
+                foreach (var r in inst.GetComponentsInChildren<Renderer>())
+                {
+                    var mats = new Material[r.sharedMaterials.Length];
+                    for (int i = 0; i < mats.Length; i++) mats[i] = artMat;
+                    r.sharedMaterials = mats;
+                }
+            }
+            return inst;
+        }
+
         // ------------------------------------------------------------ stages
         static string BuildStage(Stage stage)
         {
@@ -105,13 +144,15 @@ namespace Workshop.Setup
             var cam = Camera.main;
             cam.transform.position = new Vector3(0f, 13f, -11f);
             cam.transform.rotation = Quaternion.Euler(50f, 0f, 0f);
-            cam.clearFlags = CameraClearFlags.Skybox;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.53f, 0.71f, 0.84f);
 
             GameObject player = null;
 
             if (stage.Level >= 2)
             {
                 BuildArena();
+                BuildDecor();
                 player = BuildPlayer();
             }
 
@@ -143,12 +184,26 @@ namespace Workshop.Setup
 
             if (stage.Level >= 6)
             {
-                var hazard = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                hazard.name = "Hazard";
-                hazard.transform.position = new Vector3(-6f, 0.6f, -3.5f);
-                hazard.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
-                hazard.GetComponent<Renderer>().sharedMaterial = Mat("Hazard");
-                hazard.GetComponent<BoxCollider>().isTrigger = true;
+                var mine = Art("space-mine-3a1654");
+                GameObject hazard;
+                if (mine != null)
+                {
+                    hazard = new GameObject("Hazard");
+                    hazard.transform.position = new Vector3(-6f, 0.6f, -3.5f);
+                    var col = hazard.AddComponent<BoxCollider>();
+                    col.isTrigger = true;
+                    col.size = new Vector3(1.4f, 1.4f, 1.4f);
+                    Model(mine, hazard.transform, new Vector3(0f, -0.6f, 0f), 1f);
+                }
+                else
+                {
+                    hazard = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    hazard.name = "Hazard";
+                    hazard.transform.position = new Vector3(-6f, 0.6f, -3.5f);
+                    hazard.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+                    hazard.GetComponent<Renderer>().sharedMaterial = Mat("Hazard");
+                    hazard.GetComponent<BoxCollider>().isTrigger = true;
+                }
                 hazard.AddComponent(FindType(stage.Ns + ".Hazard"));
             }
 
@@ -198,24 +253,55 @@ namespace Workshop.Setup
 
         static GameObject BuildPlayer()
         {
-            var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            player.name = "Player";
-            player.tag = "Player";
-            player.transform.position = new Vector3(0f, 1f, 0f);
-            player.GetComponent<Renderer>().sharedMaterial = Mat("Player");
+            var bot = Art("companion-bot-170074");
+            GameObject player;
+            if (bot != null)
+            {
+                player = new GameObject("Player");
+                player.transform.position = new Vector3(0f, 1f, 0f);
+                var col = player.AddComponent<CapsuleCollider>();
+                col.height = 2f;
+                col.radius = 0.5f;
+                Model(bot, player.transform, new Vector3(0f, -1f, 0f), 1.4f);
+            }
+            else
+            {
+                player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                player.name = "Player";
+                player.transform.position = new Vector3(0f, 1f, 0f);
+                player.GetComponent<Renderer>().sharedMaterial = Mat("Player");
 
+                var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                nose.name = "FacingIndicator";
+                UnityEngine.Object.DestroyImmediate(nose.GetComponent<Collider>());
+                nose.transform.SetParent(player.transform);
+                nose.transform.localPosition = new Vector3(0f, 0.35f, 0.45f);
+                nose.transform.localScale = new Vector3(0.2f, 0.2f, 0.3f);
+                nose.GetComponent<Renderer>().sharedMaterial = Mat("Player");
+            }
+
+            player.tag = "Player";
             var rb = player.AddComponent<Rigidbody>();
             rb.isKinematic = true;
             rb.useGravity = false;
-
-            var nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            nose.name = "FacingIndicator";
-            UnityEngine.Object.DestroyImmediate(nose.GetComponent<Collider>());
-            nose.transform.SetParent(player.transform);
-            nose.transform.localPosition = new Vector3(0f, 0.35f, 0.45f);
-            nose.transform.localScale = new Vector3(0.2f, 0.2f, 0.3f);
-            nose.GetComponent<Renderer>().sharedMaterial = Mat("Player");
             return player;
+        }
+
+        static void BuildDecor()
+        {
+            var tree = Art("maple-tree-65fa12");
+            if (tree == null) return;
+            var decor = new GameObject("Decor");
+            var spots = new[]
+            {
+                new Vector3(-8.3f, 0f, 8.3f), new Vector3(8.3f, 0f, 8.3f),
+                new Vector3(-8.3f, 0f, -8.3f), new Vector3(8.3f, 0f, -8.3f),
+            };
+            for (int i = 0; i < spots.Length; i++)
+            {
+                var t = Model(tree, decor.transform, spots[i], 0.7f);
+                t.transform.localRotation = Quaternion.Euler(0f, i * 85f, 0f);
+            }
         }
 
         static GameObject BuildCoinPrefab(Stage stage)
@@ -272,14 +358,22 @@ namespace Workshop.Setup
             col.isTrigger = true;
             col.radius = 0.6f;
 
-            var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            visual.name = "Visual";
-            UnityEngine.Object.DestroyImmediate(visual.GetComponent<Collider>());
-            visual.transform.SetParent(root.transform);
-            visual.transform.localPosition = Vector3.zero;
-            visual.transform.localRotation = Quaternion.Euler(45f, 45f, 0f);
-            visual.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-            visual.GetComponent<Renderer>().sharedMaterial = Mat("Magnet");
+            var crystal = Art("crystal-cluster-624138");
+            if (crystal != null)
+            {
+                Model(crystal, root.transform, new Vector3(0f, -0.6f, 0f), 1.5f);
+            }
+            else
+            {
+                var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visual.name = "Visual";
+                UnityEngine.Object.DestroyImmediate(visual.GetComponent<Collider>());
+                visual.transform.SetParent(root.transform);
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localRotation = Quaternion.Euler(45f, 45f, 0f);
+                visual.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
+                visual.GetComponent<Renderer>().sharedMaterial = Mat("Magnet");
+            }
 
             string dir = Root + "/" + stage.Folder + "/Prefabs";
             if (!AssetDatabase.IsValidFolder(dir))
