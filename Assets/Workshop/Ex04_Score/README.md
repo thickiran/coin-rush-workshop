@@ -13,7 +13,7 @@ file by file.
 1. Show the task prompt (below) — one prompt, four coordinated pieces.
 2. Approve the plan only after checking it touches only `Ex04_Score/`.
 3. Play to the win screen; then prove the state from the terminal:
-   `unity command eval 'UnityEngine.Time.timeScale'` → `0` after winning.
+   `unity command eval 'return UnityEngine.Time.timeScale;'` → `0` after winning.
 
 ## Your turn (10 min)
 1. Prompt:
@@ -30,7 +30,7 @@ file by file.
 
 ## Verify
 - Label reads `Coins: 0 / 8` on play start and counts up.
-- `unity command eval 'UnityEngine.Time.timeScale'` returns 0 on the win screen.
+- `unity command eval 'return UnityEngine.Time.timeScale;'` returns 0 on the win screen.
 
 ## If you get stuck
 - Score stuck at 0? Ask the agent to check that CoinPickup actually calls ScoreManager.

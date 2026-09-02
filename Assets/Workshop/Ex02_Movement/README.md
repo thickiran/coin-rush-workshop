@@ -28,7 +28,7 @@ plan before any file is touched, and you verify the result in the editor.
    with WASD and click-to-move.
 
 ## Verify
-- `unity command eval 'UnityEngine.GameObject.Find("Player").GetComponent("PlayerController") != null'` → `True`
+- `unity command eval 'return UnityEngine.GameObject.Find("Player").GetComponent("PlayerController") != null;'` → `True`
 - In play mode the capsule moves and turns toward where you click.
 
 ## If you get stuck

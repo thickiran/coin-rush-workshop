@@ -31,11 +31,11 @@ Run each command in your terminal and watch the editor react:
    ```
 4. Ask the editor what you built:
    ```
-   unity command eval 'UnityEngine.GameObject.Find("Player") != null'
+   unity command eval 'return UnityEngine.GameObject.Find("Player") != null;'
    ```
 
 ## Verify
-- `unity command eval 'UnityEngine.GameObject.Find("Ground").transform.localScale'` prints `(20.00, 0.50, 20.00)`.
+- `unity command eval 'return UnityEngine.GameObject.Find("Ground").transform.localScale;'` prints `(20.00, 0.50, 20.00)`.
 - The Hierarchy shows `Ground` and `Player`.
 
 Your scene will look plainer than the next checkpoint (no walls, no materials) — that is

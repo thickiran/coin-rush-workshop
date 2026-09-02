@@ -29,7 +29,7 @@ The rule: **no fix until the root cause is proven.**
 2. The agent should discover the coin prefab carries **two identical trigger
    colliders** — so OnTriggerEnter fires twice. Evidence looks like:
    ```
-   unity command eval 'UnityEngine.GameObject.Find("Coins").transform.GetChild(0).GetComponents<UnityEngine.Collider>().Length'
+   unity command eval 'return UnityEngine.GameObject.Find("Coins").transform.GetChild(0).GetComponents<UnityEngine.Collider>().Length;'
    ```
    → `2` (should be 1).
 3. Approve the minimal fix (remove the duplicate collider on the prefab), then play a

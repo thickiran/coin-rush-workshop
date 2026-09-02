@@ -11,7 +11,7 @@ interrogate the live scene with `eval` — the skill you'll later use to prove b
 ## Instructor demo (5 min)
 1. Ask the agent for a spinning coin prefab (prompt below); approve the plan.
 2. When it's done, count the coins from the terminal:
-   `unity command eval 'UnityEngine.Object.FindObjectsByType<UnityEngine.MonoBehaviour>(UnityEngine.FindObjectsSortMode.None).Length'`
+   `unity command eval 'return UnityEngine.GameObject.Find("Coins").transform.childCount;'`
 3. Collect one in play mode; run the count again — one fewer.
 
 ## Your turn (10 min)
@@ -26,7 +26,7 @@ interrogate the live scene with `eval` — the skill you'll later use to prove b
 2. Play: walk into a coin — it should log and vanish.
 3. Practice live inspection — count remaining coins from the terminal:
    ```
-   unity command eval 'UnityEngine.GameObject.Find("Coins").transform.childCount'
+   unity command eval 'return UnityEngine.GameObject.Find("Coins").transform.childCount;'
    ```
 
 ## Verify
